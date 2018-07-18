@@ -4,18 +4,31 @@ import org.apache.zookeeper.*;
 import org.apache.zookeeper.data.Stat;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 /**
- * 直接连接一台zookeeper server
+ * 连接集群
  */
-public class ZooKeeperHello {
+public class ZooKeeperHello1 {
     public static void main(String[] args) throws IOException, InterruptedException, KeeperException {
-        ZooKeeper zk = new ZooKeeper("10.168.12.43:2181", 300000, new DemoWatcher());//连接zk server
-        String node = "/app1";
+        ZooKeeper zk = new ZooKeeper("10.168.12.43:2181,10.168.12.43:2182,10.168.12.43:2183", 300000, new DemoWatcher());//连接zk server
+        if (!zk.getState().equals(ZooKeeper.States.CONNECTED)) {
+            while (true) {
+                if (zk.getState().equals(ZooKeeper.States.CONNECTED)) {
+                    break;
+                }
+                try {
+                    TimeUnit.SECONDS.sleep(5);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        String node = "/app2";
         Stat stat = zk.exists(node, false);//检测/app1是否存在
         if (stat == null) {
             //创建节点
-            String createResult = zk.create(node, "test".getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+            String createResult = zk.create(node, "app2 test".getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
             System.out.println(createResult);
         }
         //获取节点的值
